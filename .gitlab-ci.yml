@@ -1,0 +1,32 @@
+stages:
+  - test
+  - build
+  - publish
+
+.node:
+  image: node:16.13.1
+  needs: []
+  cache:
+    paths:
+      - node_modules/
+  before_script:
+    - yarn config set cache-folder /data/yarn/cache/
+    - yarn cache dir
+    - yarn install --check-files --frozen-lockfile --non-interactive
+    
+
+build:
+  extends: .node
+  stage: build
+  script:
+    - yarn build:prod --report
+  artifacts:
+    paths:
+      - dist/
+
+lint:
+  extends: .node
+  stage: test
+  script:
+    - yarn run lint
+
