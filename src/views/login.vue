@@ -90,7 +90,9 @@
 
 <script>
 import { validUsername } from '@/utils/validate'
+// 导入验证用户名的函数
 import { setToken } from '@/utils/auth'
+// 导入设置访问令牌的函数,登陆成功后把通行证存起来
 import { version } from '@/config'
 import { title } from '@/settings'
 export default {
@@ -106,6 +108,7 @@ export default {
     const validatePassword = (rule, value, callback) => {
       if (value.length < 6) {
         callback(new Error('密码不能少于8位'))
+        // bug：密码不能少于6位，但提示信息写成了8位
       } else {
         callback()
       }
@@ -127,7 +130,7 @@ export default {
       },
       passwordType: 'password',
       capsTooltip: false,
-      loading: false,
+      loading: false, // 登录按钮的加载状态(转圈)
       redirect: null,
       checked: true
     }
@@ -140,26 +143,33 @@ export default {
           // this.redirect = query.redirect;
         }
       },
+      // 通常用于获取重定向地址。例如：如果你之前想看“订单页面”
+      // 但没登录，系统把你踢回登录页后，它会记住你想去
+      // “订单页面”，登录成功后直接送你过去。
       immediate: true
     }
   },
+  // 数据好了用created
   created() {
-    this.getCookie()
-    // window.addEventListener('storage', this.afterQRScan)
+    this.getCookie() // 获取cookie
+    // 二维码扫描：window.addEventListener('storage', this.afterQRScan)
   },
+  // 页面元素好了用mounted
   mounted() {
     if (this.loginForm.username === '') {
-      this.$refs.username.focus()
+      this.$refs.username.focus() // 光标自动对准
+      // $ref是vue实例，$refs是vue实例的一个属性，
+      // 存储着所有注册了ref属性的子组件和HTML元素
     } else if (this.loginForm.password === '') {
-      this.$refs.password.focus()
+      this.$refs.password.focus() // 光标自动对准
     }
   },
   destroyed() {
     // window.removeEventListener('storage', this.afterQRScan)
   },
   methods: {
-    checkCapslock(e) {
-      const { key } = e
+    checkCapslock(e) { // 检测CapsLock是否开启
+      const { key } = e // const { key } = e
       this.capsTooltip = key && key.length === 1 && key >= 'A' && key <= 'Z'
     },
     showPwd() {
@@ -170,30 +180,38 @@ export default {
       }
       this.$nextTick(() => {
         this.$refs.password.focus()
+        // 转换密码显示后，能继续输入密码。
       })
     },
     handleLogin() {
       this.$refs.loginForm.validate((valid) => {
-        if (!valid) return false
+        // 进行表单验证
+        if (!valid) return false // 验证不通过则停止执行
         if (this.checked) {
           this.setCookie(this.loginForm.userName, this.loginForm.password, 7)
+          // 设置cookie，保存7天
         } else {
-          this.clearCookie()
+          this.clearCookie() // 清除cookie
         }
-        this.loading = true
+        this.loading = true // 显示加载状态
         const param = new URLSearchParams()
+        // 创建URLSearchParams对象，用于构造请求参数
         const grant_type = 'user_token'
         param.append('grant_type', grant_type)
         param.append('userName', this.loginForm.userName)
         param.append('password', this.loginForm.password)
+        // 打包授权类型和用户输入的用户名、密码到请求参数中
         this.$http
           .post('/oauth/token', param)
-          .then((data) => {
+          // 发送POST请求到认证服务器的token端点，获取访问令牌
+          .then((data) => { // 请求成功后，处理响应数据
             this.loading = false
             setToken(`${data.token_type} ${data.access_token}`)
+            // 将获取到的访问令牌存储在浏览器的cookie中，供后续请求使用
             this.$router.push('/main-dashboard2')
           })
           .finally(() => {
+            // 无论请求成功还是失败，都会执行这个回调函数
             this.loading = false
           })
       })
@@ -202,8 +220,8 @@ export default {
     // 设置cookie
     setCookie(c_name, c_pwd, exdays) {
       var exdate = new Date() // 获取时间
-      exdate.setTime(exdate.getTime() + 24 * 60 * 60 * 1000 * exdays) // 保存的天数
-      // 字符串拼接cookie
+      exdate.setTime(exdate.getTime() + 24 * 60 * 60 * 1000 * exdays)
+      // 保存的天数
       window.document.cookie =
         'userName' + '=' + c_name + ';path=/;expires=' + exdate.toGMTString()
       window.document.cookie =
@@ -211,8 +229,9 @@ export default {
     },
     // 读取cookie
     getCookie: function() {
-      if (document.cookie.length > 0) {
-        var arr = document.cookie.split('; ') // 这里显示的格式需要切割一下自己可输出看下
+      if (document.cookie.length > 0) { // 存在存储的账号密码
+        var arr = document.cookie.split('; ')
+        // 这里显示的格式需要切割一下自己可输出看下
         for (var i = 0; i < arr.length; i++) {
           var arr2 = arr[i].split('=') // 再次切割
           // 判断查找相对应的值
@@ -234,17 +253,17 @@ export default {
 </script>
 
 <style lang="scss">
-$bg: #fff;
-$light_gray: #808080;
-$cursor: #9f9f9f;
+$bg: #fff; // 背景白色
+$light_gray: #808080; // 输入框文字颜色
+$cursor: #9f9f9f; // 输入框光标颜色
 
 @supports (-webkit-mask: none) and (not (cater-color: $cursor)) {
   .login-container .el-input input {
     color: $cursor;
   }
-}
+} // 兼容Safari浏览器，解决输入框文字颜色不正确的问题
 
-.login-container {
+.login-container { // UI布局定制
   .el-input {
     display: inline-block;
     height: 47px;

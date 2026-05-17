@@ -1,3 +1,4 @@
+// 路由守卫，控制了 Token 校验、权限拉取和动态路由挂载。
 import router from './router'
 import store from './store'
 import { Message } from 'element-ui'
